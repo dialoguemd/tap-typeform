@@ -16,6 +16,8 @@ REQUIRED_CONFIG_KEYS = ["token", "forms", "incremental_range"]
 
 LOGGER = singer.get_logger()
 
+env = os.environ.copy()
+
 # def check_authorization(atx):
 #    atx.client.get('/settings')
 
@@ -87,7 +89,17 @@ def sync(atx):
 @utils.handle_top_exception(LOGGER)
 def main():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    atx = Context(args.config, args.state)
+    if args.config:
+        LOGGER.info("Config json found")
+        config = args.config
+    elif "typeform_config" in env:
+        LOGGER.info("Env var config found")
+        config = json.loads(env["typeform_config"])
+    else:
+        LOGGER.critical("No config found, aborting run")
+        return
+
+    atx = Context(config, args.state)
     if args.discover:
         # the schema is static from file so we don't need to pass in atx for connection info.
         catalog = discover()
