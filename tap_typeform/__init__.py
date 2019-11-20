@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import os
 import sys
@@ -12,7 +13,7 @@ import tap_typeform.schemas as schemas
 import tap_typeform.streams as streams
 from tap_typeform.context import Context
 
-REQUIRED_CONFIG_KEYS = ["token", "forms", "incremental_range"]
+REQUIRED_CONFIG_KEYS = []
 
 LOGGER = singer.get_logger()
 
@@ -86,12 +87,40 @@ def sync(atx):
     LOGGER.info("--------------------")
 
 
+def load_file(filename):
+    if filename is None:
+        return {}
+
+    file = {}
+
+    try:
+        with open(filename) as handle:
+            file = json.load(handle)
+    except Exception:
+        LOGGER.fatal("Failed to decode config file. Is it valid json?")
+        raise RuntimeError
+
+    return file
+
+
 @utils.handle_top_exception(LOGGER)
 def main():
-    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-p", "--properties", help="Catalog file with fields selected")
+    parser.add_argument("-c", "--config", help="Optional config file")
+    parser.add_argument("-s", "--state", help="State file")
+    parser.add_argument(
+        "-d",
+        "--discover",
+        help="Build a catalog from the underlying schema",
+        action="store_true",
+    )
+
+    args = parser.parse_args()
     if args.config:
         LOGGER.info("Config json found")
-        config = args.config
+        config = load_file(args.config)
     elif "typeform_config" in env:
         LOGGER.info("Env var config found")
         config = json.loads(env["typeform_config"])
@@ -99,15 +128,16 @@ def main():
         LOGGER.critical("No config found, aborting run")
         return
 
-    atx = Context(config, args.state)
+    properties = load_file(args.properties)
+    state = load_file(args.state)
+
+    atx = Context(config, state)
     if args.discover:
         # the schema is static from file so we don't need to pass in atx for connection info.
         catalog = discover()
         json.dump(catalog.to_dict(), sys.stdout)
     else:
-        atx.catalog = (
-            Catalog.from_dict(args.properties) if args.properties else discover()
-        )
+        atx.catalog = Catalog.from_dict(properties) if args.properties else discover()
         sync(atx)
 
 
