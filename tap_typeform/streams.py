@@ -2,15 +2,21 @@ import datetime
 import json
 import time
 
+import dialogue.logging
 import pendulum
 import singer
+import structlog
 from backoff import constant, expo, on_exception
+from dialogue.logging import util
 from ratelimit import RateLimitException, limits, sleep_and_retry
 from singer.bookmarks import reset_stream, write_bookmark
+from structlog import get_logger
 
 from tap_typeform.client import MetricsRateLimitException
 
-LOGGER = singer.get_logger()
+util.setup_structlog()
+
+LOGGER = get_logger()
 
 MAX_METRIC_JOB_TIME = 1800
 METRIC_JOB_POLL_SLEEP = 0

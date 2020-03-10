@@ -11,7 +11,8 @@ requests = "^2.2"
 backoff = "^1.3"
 ratelimit = "^2.2"
 pendulum = "^1.4"
-singer-python = "^5.4"
+singer-python = "^5.9"
+"dialogue.logging" = "^3.0.2"
 
 [tool.poetry.dev-dependencies]
 pylama = "^7.7"

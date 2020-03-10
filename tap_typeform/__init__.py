@@ -5,9 +5,13 @@ import json
 import os
 import sys
 
+import dialogue.logging
 import singer
+import structlog
+from dialogue.logging import util
 from singer import utils
 from singer.catalog import Catalog, CatalogEntry, Schema
+from structlog import get_logger
 
 import tap_typeform.schemas as schemas
 import tap_typeform.streams as streams
@@ -15,7 +19,9 @@ from tap_typeform.context import Context
 
 REQUIRED_CONFIG_KEYS = []
 
-LOGGER = singer.get_logger()
+util.setup_structlog()
+
+LOGGER = get_logger()
 
 env = os.environ.copy()
 
@@ -81,10 +87,8 @@ def sync(atx):
     # since there is only one set of schemas for all forms, they will always be selected
     streams.sync_forms(atx)
 
-    LOGGER.info("--------------------")
     for stream_name, stream_count in atx.counts.items():
         LOGGER.info("%s: %d", stream_name, stream_count)
-    LOGGER.info("--------------------")
 
 
 def load_file(filename):

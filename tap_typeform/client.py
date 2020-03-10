@@ -1,8 +1,14 @@
 import backoff
+import dialogue.logging
 import requests
 import singer
+import structlog
+from dialogue.logging import util
+from structlog import get_logger
 
-LOGGER = singer.get_logger()
+util.setup_structlog()
+
+LOGGER = get_logger()
 
 
 class RateLimitException(Exception):
